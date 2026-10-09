@@ -1,7 +1,18 @@
+from os.path import join
+from time import sleep
+
 import requests
 import os
 import json
+import sounddevice as sd
+import numpy as np
+from faster_whisper import WhisperModel
+import time
 
+
+sample_rate = 16000
+duration = 6
+whisper_size = "base"
 model = "llama3.2:1b"
 url = "http://localhost:11434/api/chat"
 max_history = 10
@@ -17,6 +28,24 @@ Rules:
 
 You are running fully local on the user's laptop. No internet access.
 """
+
+def listen():
+    print("\n[Listening for 6 seconds...")
+
+    audio = sd.rec(
+        int(duration * sample_rate),
+        samplerate=sample_rate,
+        channels=1,
+        dtype='float32',
+    )
+    sd.wait()
+    print("[Transcribing...]")
+
+    audio_flat = audio.flatten()
+    segments, _ = whisper_model.transcribe(audio_flat, language="en")
+    text = " ".join(seg.text.strip() for seg in segments).strip()
+    return text
+
 
 def load_history():
     if os.path.exists(history_file):
@@ -113,17 +142,29 @@ def handle_command(user_input):
 
 messages = load_history()
 
+print("[loading Whisper Model...]")
+whisper_model = WhisperModel(whisper_size, device="cpu", compute_type="int8")
+print("[whisper ready.]")
+
 print("Jarvis is ready. type 'help' for commands. \n")
 
 while True:
-    user_input = input("you: ".strip())
+    try:
+        user_input = listen()
+
+    except KeyboardInterrupt:
+        print("goodbye")
+        break
+
     if not user_input:
+        print("[no speech detected]")
         continue
+
+    print(f"you (voice): {user_input}")
 
     if handle_command(user_input):
         if user_input.lower().strip() in ["quit", "exit"]:
             break
         continue
-
     replys = chat(user_input)
     print(f"Jarvis: {replys}\n")
