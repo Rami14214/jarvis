@@ -1,5 +1,3 @@
-from os.path import join
-from time import sleep
 import pyttsx3
 import requests
 import os
@@ -7,7 +5,6 @@ import json
 import sounddevice as sd
 import numpy as np
 from faster_whisper import WhisperModel
-import time
 import argparse
 
 engine = pyttsx3.init()
@@ -40,7 +37,7 @@ def speak(text):
     engine.runAndWait()
 
 def listen():
-    print("\n[Listening for 6 seconds...")
+    print("\n[Listening for 6 seconds...]")
 
     audio = sd.rec(
         int(duration * sample_rate),
@@ -109,10 +106,8 @@ def chat(user_message):
         }
     )
     reply = response.json()["message"]["content"]
-    if args.silent == False:
+    if not args.silent:
         speak(reply)
-    elif args.silent == True:
-        print("Silent mode")
     messages.append({"role": "assistant", "content": reply})
     trim_history()
     sanitize_message()
@@ -180,5 +175,5 @@ while True:
         if user_input.lower().strip() in ["quit", "exit"]:
             break
         continue
-    replys = chat(user_input)
-    print(f"Jarvis: {replys}\n")
+    reply = chat(user_input)
+    print(f"Jarvis: {reply}\n")
