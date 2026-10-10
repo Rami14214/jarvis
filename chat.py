@@ -1,6 +1,6 @@
 from os.path import join
 from time import sleep
-
+import pyttsx3
 import requests
 import os
 import json
@@ -8,8 +8,9 @@ import sounddevice as sd
 import numpy as np
 from faster_whisper import WhisperModel
 import time
+import argparse
 
-
+engine = pyttsx3.init()
 sample_rate = 16000
 duration = 6
 whisper_size = "base"
@@ -28,6 +29,15 @@ Rules:
 
 You are running fully local on the user's laptop. No internet access.
 """
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--silent', action='store_true')
+args = parser.parse_args()
+
+def speak(text):
+    engine.setProperty('rate', 150)
+    engine.say(text)
+    engine.runAndWait()
 
 def listen():
     print("\n[Listening for 6 seconds...")
@@ -99,6 +109,10 @@ def chat(user_message):
         }
     )
     reply = response.json()["message"]["content"]
+    if args.silent == False:
+        speak(reply)
+    elif args.silent == True:
+        print("Silent mode")
     messages.append({"role": "assistant", "content": reply})
     trim_history()
     sanitize_message()
